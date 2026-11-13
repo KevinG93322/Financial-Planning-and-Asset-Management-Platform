@@ -1,0 +1,130 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(cuid())
+  address       String         @unique
+  createdAt     DateTime       @default(now())
+  profile       Profile?
+  accounts      Account[]
+  goals         Goal[]
+  snapshots     Snapshot[]
+  sessions      Session[]
+  vaultReceipts VaultReceipt[]
+}
+
+model AuthNonce {
+  id        String   @id @default(cuid())
+  address   String
+  nonce     String
+  message   String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([address])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Profile {
+  id               String @id @default(cuid())
+  userId           String @unique
+  user             User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  displayName      String
+  incomeMonthly    Int
+  expensesMonthly  Int
+  riskTolerance    String
+  timeHorizonYears Int
+  notes            String @default("")
+}
+
+model Account {
+  id      String @id @default(cuid())
+  userId  String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name    String
+  type    String
+  balance Int
+
+  @@index([userId])
+}
+
+model Goal {
+  id                  String @id @default(cuid())
+  userId              String
+  user                User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name                String
+  targetAmount        Int
+  targetDate          String
+  monthlyContribution Int
+
+  @@index([userId])
+}
+
+model Snapshot {
+  id            String       @id @default(cuid())
+  userId        String
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  canonicalJson String
+  contentHash   String
+  createdAt     DateTime     @default(now())
+  plan          Plan?
+  chainRecord   ChainRecord?
+
+  @@index([userId])
+}
+
+model Plan {
+  id              String   @id @default(cuid())
+  snapshotId      String   @unique
+  snapshot        Snapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  summary         String
+  actionsJson     String
+  assumptionsJson String
+  disclaimer      String
+  source          String
+  metricsJson     String
+  createdAt       DateTime @default(now())
+}
+
+model ChainRecord {
+  id          String   @id @default(cuid())
+  snapshotId  String   @unique
+  snapshot    Snapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  txHash      String
+  recordId    String
+  recordType  String
+  subject     String
+  contentHash String
+  status      String
+  blockNumber String
+  createdAt   DateTime @default(now())
+}
+
+model VaultReceipt {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  txHash      String   @unique
+  action      String
+  blockNumber String
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+}

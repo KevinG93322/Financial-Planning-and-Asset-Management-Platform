@@ -1,0 +1,12 @@
+node_modules
+dist
+.next
+.env
+.env.local
+coverage
+artifacts
+cache
+typechain-types
+data
+*.log
+npm-debug.log*
